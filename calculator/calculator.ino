@@ -2,7 +2,7 @@
  *
  * @file calculator.ino
  *
- * @author (STUDENTS -- TYPE YOUR NAMES HERE)
+ * @author (STUDENTS -- Logan and Cailen)
  *
  * @brief Implementation of a 4-function integer calculator
  *
@@ -29,10 +29,12 @@ void setup() {
   cowpi_setup(LCD1602 | I2C);
   cowpi_lcd1602_set_backlight(true);
   // timer = ...;
-  timer->control = 0x32;
-  timer->compareA = 250-1;
+  // timer->control = 0x32;
+  // timer->compareA = 250-1;
   // timer_interrupt_masks = ...;
   timer_interrupt_masks[0] |= 0x2;
+  attachInterrupt(digitalPinToInterrupt(2), handle_buttonpress, HIGH);
+  attachInterrupt(digitalPinToInterrupt(3), handle_keypress, CHANGE);
 }
 
 void loop() {
@@ -41,10 +43,25 @@ void loop() {
 
 
 void handle_buttonpress(void) {
-  ;
+  static unsigned long last_button_press = 0uL;
+  static bool button_pressed = false;
+  unsigned long now = millis();
+  if (now - last_button_press > DEBOUNCE_TIME) {
+    last_button_press = now;
+    if (cowpi_left_button_is_pressed) {
+      Serial.println("Left button was pressed");
+    } else  {
+      Serial.println("Right button was pressed");
+    }
+  }
 }
 
 void handle_keypress(void) {
-  ;
+  static unsigned long last_key_press = 0uL;
+  static bool key_pressed = false;
+  unsigned long now = millis();
+  if (now - last_key_press > DEBOUNCE_TIME) {
+    last_key_press = now;
+    Serial.println(cowpi_get_keypress());
+  }
 }
-
