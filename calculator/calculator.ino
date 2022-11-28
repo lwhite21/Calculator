@@ -50,11 +50,11 @@ void handle_buttonpress(void) {
   if (now - last_button_press > DEBOUNCE_TIME) {
     last_button_press = now;
     if (cowpi_left_button_is_pressed()) {
-      Serial.println("Left button was pressed");
       negate_operator();
+      cowpi_illuminate_left_led();
     } else if (cowpi_right_button_is_pressed()) {
-      Serial.println("Right button was pressed");
-      clear_display();
+      maunual_clear_display();
+      cowpi_illuminate_right_led();
     }
   }
 }
@@ -83,13 +83,17 @@ void display_keypress(char key) {
       operator_2[length] = key;
     }
   } else if (key == 'A' || key == 'B' || key == 'C' || key == 'D') {
-    blank_display();
-    operator_1_negative = operator_2_negative;
-    operator_2_negative = 1;
+    if (!(strlen(operator_1) > 0 && strlen(operator_2) <= 0)) {
+      blank_display();
+      cowpi_lcd1602_place_character(0x10, '0');
+      operator_1_negative = operator_2_negative;
+      operator_2_negative = 1;
+      one_or_two = 2;
+      memset(operator_1,0,sizeof(operator_1));
+      strcpy(operator_1, operator_2);
+    }
     one_or_two = 2;
-    memset(operator_1,0,sizeof(operator_1));
-    strcpy(operator_1, operator_2);
-    if (strlen(operator_1) == 0) {
+    if (strlen(operator_1) == 0 && strlen(operator_2) <= 0) {
       operator_1[0] = '0';
     }
     memset(operator_2,0,sizeof(operator_2));
@@ -133,7 +137,7 @@ void display_keypress(char key) {
       } else {
         operator_1_negative = 1;
       }
-      itoa(result, operator_1, 10);
+      ltoa(result, operator_1, 10);
       operation = 0;
     }
   }
@@ -168,6 +172,14 @@ void display_operands(void) {
     cowpi_lcd1602_place_character(0x50 - j, *s++);
     j--;
   }
+  if (strlen(operator_1) > 9) {
+    clear_display();
+    cowpi_lcd1602_place_character(0x10 - 1, 'r');
+    cowpi_lcd1602_place_character(0x10 - 2, 'o');
+    cowpi_lcd1602_place_character(0x10 - 3, 'r');
+    cowpi_lcd1602_place_character(0x10 - 4, 'r');
+    cowpi_lcd1602_place_character(0x10 - 5, 'E');
+  }
 }
 
 void negate_operator() {
@@ -191,6 +203,20 @@ void clear_display(void) {
     index++;
   }
   cowpi_lcd1602_place_character(0xF, '0');
+}
+
+void maunual_clear_display(void) {
+  if (one_or_two == 1) {
+    clear_display();
+  } else {
+    memset(operator_2,0,sizeof(operator_2));
+    operator_2_negative = 1;
+    int index = 0;
+    while (index < 16) {   
+      cowpi_lcd1602_place_character(0x00 + index + 0x40 , ' ');
+      index++;
+    }
+  }
 }
 
 void blank_display(void) {
